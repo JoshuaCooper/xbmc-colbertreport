@@ -289,7 +289,7 @@ def LISTVIDEOS(url):
 
 def PLAYVIDEO(name,url):
     data = getURL(url)
-    uri = re.compile('"http://media.mtvnservices.com/(.+?)"/>').findall(data)[0]
+    uri = re.compile('http://media.mtvnservices.com/(mgid:cms:video:thedailyshow.com:\d{6})').findall(data)[0]
     rtmp = GRAB_RTMP(uri)
     item = xbmcgui.ListItem(name, iconImage="DefaultVideo.png", thumbnailImage=thumbnail, path=rtmp)
     item.setInfo( type="Video", infoLabels={ "Title": name,
