@@ -1,5 +1,6 @@
 import urllib,urllib2,re,xbmcplugin,xbmcgui
-import os,datetime
+import os,sys,datetime
+from BeautifulSoup import BeautifulSoup
 import demjson
 
 DATELOOKUP = "http://www.thedailyshow.com/feeds/timeline/coordinates/"
@@ -85,6 +86,33 @@ def ROOT():
     addDir('Guests','guests',3)
     xbmcplugin.endOfDirectory(pluginhandle)
 
+def extract_data_from_episode(episode):
+    listing = dict(link='', name='', thumbnail=thumbnail, description='', airdate='', season=0, episode=0)
+    tag_date = episode.findNext('span', {'class': re.compile('date')})
+    if tag_date:
+        a_tag = tag_date.findNext('a')
+        if a_tag:
+            listing['link'] = a_tag.get('href', '')
+            listing['name'] = a_tag.text
+    img_container = episode.findNext('div', {'class': re.compile('moreEpisodesImage')})
+    if img_container:
+        img = img_container.findNext('img')
+        if img:
+            listing['thumbnail'] = img.get('src', '')
+    description_tag = episode.findNext('span', {'class': re.compile('description')})
+    if description_tag:
+        listing['description'] = description_tag.text
+    airdate_tag = episode.findNext(True, text=re.compile("Aired:"))
+    if airdate_tag:
+        listing['airdate'] = airdate_tag.replace('Aired:', '').strip()
+    ep_number_tag = episode.findNext(True, text=re.compile("Episode \d+"))
+    if ep_number_tag:
+        ep_number_tag = ep_number_tag.replace('Episode', '').strip()
+        listing['season'] = int(ep_number_tag[:-3])
+        listing['episode'] = int(ep_number_tag[-3:])
+    return listing
+    
+
 def FULLEPISODES():
     xbmcplugin.setContent(pluginhandle, 'episodes')
     xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_NONE)
@@ -93,46 +121,23 @@ def FULLEPISODES():
     weeks = re.compile('<a id="(.+?)" class="seaso.+?" href="#">(.+?)</a>').findall(data)
     for url, week in weeks:
         data = getURL(url)
-        episodes=re.compile('<span class="date"><a href="(.+?)">(.+?)</a></span>').findall(data)
-        thumbnails=re.compile("<img width='.+?' height='.+?' src='(.+?)'.+?/>").findall(data)
-        descriptions=re.compile('<span class="description">(.+?)</span>').findall(data)
-        airdates=re.compile('<span class="date">Aired: (.+?)</span>').findall(data)
-        epNumbers=re.compile('<span class="id">Episode (.+?)</span>').findall(data)
-        listings = []
-        for link, name in episodes:
-            listing = []
-            listing.append(name)
-            listing.append(link)
-            listings.append(listing)
-        for thumbnail in thumbnails:
-            marker = thumbnails.index(thumbnail)
-            listings[marker].append(thumbnail)
-        for description in descriptions:
-            marker = descriptions.index(description)
-            listings[marker].append(description)
-        for airdate in airdates:
-            marker = airdates.index(airdate)
-            listings[marker].append(airdate)
-        for epNumber in epNumbers:
-            marker = epNumbers.index(epNumber)
-            listings[marker].append(epNumber)
+        episodes = BeautifulSoup(data).findAll('div', {'class': re.compile('moreEpisodesContainer')})
+        listings = map(extract_data_from_episode, episodes)
         print listings
-        for name, link, thumbnail, plot, date, seasonepisode in listings:
+        for listing in listings:
             mode = 10
-            season = int(seasonepisode[:-3])
-            episode = int(seasonepisode[-3:])
-            u=sys.argv[0]+"?url="+urllib.quote_plus(link)+"&mode="+str(mode)+"&name="+urllib.quote_plus(name)
-            u += "&season="+urllib.quote_plus(str(season))
-            u += "&episode="+urllib.quote_plus(str(episode))
-            u += "&premiered="+urllib.quote_plus(date)
-            u += "&plot="+urllib.quote_plus(plot)
-            u += "&thumbnail="+urllib.quote_plus(thumbnail)
-            liz=xbmcgui.ListItem(name, iconImage="DefaultFolder.png", thumbnailImage=thumbnail)
-            liz.setInfo( type="Video", infoLabels={ "Title": name,
-                                                    "Plot":plot,
-                                                    "Season":season,
-                                                    "Episode": episode,
-                                                    "premiered":date,
+            u=sys.argv[0]+"?url="+urllib.quote_plus(listing['link'])+"&mode="+str(mode)+"&name="+urllib.quote_plus(listing['name'])
+            u += "&season="+urllib.quote_plus(str(listing['season']))
+            u += "&episode="+urllib.quote_plus(str(listing['episode']))
+            u += "&premiered="+urllib.quote_plus(listing['airdate'])
+            u += "&plot="+urllib.quote_plus(listing['description'])
+            u += "&thumbnail="+urllib.quote_plus(listing['thumbnail'])
+            liz=xbmcgui.ListItem(listing['name'], iconImage="DefaultFolder.png", thumbnailImage=listing['thumbnail'])
+            liz.setInfo( type="Video", infoLabels={ "Title": listing['name'],
+                                                    "Plot":listing['description'],
+                                                    "Season":listing['season'],
+                                                    "Episode": listing['episode'],
+                                                    "premiered":listing['airdate'],
                                                     "TVShowTitle":TVShowTitle})
             liz.setProperty('IsPlayable', 'true')
             liz.setProperty('fanart_image',fanart)
@@ -186,13 +191,13 @@ def YEARS():
     maxyear = int(now.year)+1
     for year in range(1999,maxyear):
         year = str(year)
-        ycode = str(int(year)- 1996)
+        ycode = str(int(year)- 1999)
         addDir(year,ycode,11)
     xbmcplugin.endOfDirectory(pluginhandle)
 
 def MONTHES(ycode):
     MONTHES = ['January','February','March','April','May','June','July','August','September','October','November','December']
-    year = str(int(ycode) + 1996)
+    year = str(int(ycode) + 1999)
     mcode = '11'
     dcode = '31'
     url = DATELOOKUP+ycode+','+mcode+','+dcode
@@ -284,7 +289,7 @@ def LISTVIDEOS(url):
 
 def PLAYVIDEO(name,url):
     data = getURL(url)
-    uri = re.compile('"http://media.mtvnservices.com/(.+?)"/>').findall(data)[0]
+    uri = re.compile('http://media.mtvnservices.com/(mgid:cms:video:thedailyshow.com:\d{6})').findall(data)[0]
     rtmp = GRAB_RTMP(uri)
     item = xbmcgui.ListItem(name, iconImage="DefaultVideo.png", thumbnailImage=thumbnail, path=rtmp)
     item.setInfo( type="Video", infoLabels={ "Title": name,
