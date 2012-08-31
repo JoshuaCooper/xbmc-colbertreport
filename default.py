@@ -191,13 +191,13 @@ def YEARS():
     maxyear = int(now.year)+1
     for year in range(1999,maxyear):
         year = str(year)
-        ycode = str(int(year)- 1996)
+        ycode = str(int(year)- 1999)
         addDir(year,ycode,11)
     xbmcplugin.endOfDirectory(pluginhandle)
 
 def MONTHES(ycode):
     MONTHES = ['January','February','March','April','May','June','July','August','September','October','November','December']
-    year = str(int(ycode) + 1996)
+    year = str(int(ycode) + 1999)
     mcode = '11'
     dcode = '31'
     url = DATELOOKUP+ycode+','+mcode+','+dcode
