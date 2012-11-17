@@ -329,6 +329,7 @@ def PLAYFULLEPISODE(name,url):
 ################################ Grab rtmp        
 
 def GRAB_RTMP(uri):
+    furl = None
     swfurl = 'http://media.mtvnservices.com/player/release/?v=4.5.3'
     url = 'http://www.comedycentral.com/global/feeds/entertainment/media/mediaGenEntertainment.jhtml?uri='+uri+'&showTicker=true'
     mp4_url = "http://mtvnmobile.vo.llnwd.net/kip0/_pxn=0+_pxK=18639+_pxE=/44620/mtvnorigin"
@@ -359,7 +360,7 @@ def GRAB_RTMP(uri):
         bitrate = int(bitrates[marker])
         if bitrate == 0:
             continue
-        elif bitrate > lbitrate and lbitrate <> 0:
+        elif bitrate > lbitrate and lbitrate <> 0 and furl:
             continue
         elif lbitrate <= bitrate or lbitrate == 0:
             pixels = w * h
