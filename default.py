@@ -24,7 +24,7 @@ def getURL( url ):
         print 'The Daily Show --> getURL :: url = '+url
         txdata = None
         txheaders = {
-            'Referer': 'http://www.thedailyshow.com/videos/',
+            'Referer': 'http://www.colbertnation.com/video/',
             'X-Forwarded-For': '12.13.14.15',
             'User-Agent': 'Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US;rv:1.9.2.3) Gecko/20100401 Firefox/3.6.3 ( .NET CLR 3.5.30729)',
             }
@@ -87,41 +87,43 @@ def ROOT():
     xbmcplugin.endOfDirectory(pluginhandle)
 
 def extract_data_from_episode(episode):
-    listing = dict(link='', name='', thumbnail=thumbnail, description='', airdate='', season=0, episode=0)
-    tag_date = episode.findNext('span', {'class': re.compile('date')})
-    if tag_date:
-        a_tag = tag_date.findNext('a')
-        if a_tag:
-            listing['link'] = a_tag.get('href', '')
-            listing['name'] = a_tag.text
-    img_container = episode.findNext('div', {'class': re.compile('moreEpisodesImage')})
-    if img_container:
-        img = img_container.findNext('img')
+    listing = dict(link='', name='', thumbnail='', description='', airdate='', season=0, episode=0)
+    tag_image_holder = episode.findNext('div', {'class': re.compile('image_holder')})
+    if tag_image_holder:
+        img = tag_image_holder.findNext('img')
         if img:
             listing['thumbnail'] = img.get('src', '')
-    description_tag = episode.findNext('span', {'class': re.compile('description')})
-    if description_tag:
-        listing['description'] = description_tag.text
-    airdate_tag = episode.findNext(True, text=re.compile("Aired:"))
-    if airdate_tag:
-        listing['airdate'] = airdate_tag.replace('Aired:', '').strip()
-    ep_number_tag = episode.findNext(True, text=re.compile("Episode \d+"))
-    if ep_number_tag:
-        ep_number_tag = ep_number_tag.replace('Episode', '').strip()
-        listing['season'] = int(ep_number_tag[:-3])
-        listing['episode'] = int(ep_number_tag[-3:])
-    return listing
+    tag_text_holder = episode.findNext('div', {'class': re.compile('text_holder')})
+    if tag_text_holder:
+        tag_title = tag_text_holder.findNext('div', {'class': re.compile('title')})
+        if tag_title:
+            a_tag = tag_title.findNext('a')
+            if a_tag:
+                listing['link'] = a_tag.get('href', '')
+                listing['name'] = a_tag.text
+        airdate_tag = tag_text_holder.findNext(True, text=re.compile("Aired:"))
+        if airdate_tag:
+            listing['airdate'] = airdate_tag.replace('Aired:', '').strip()
+        ep_number_tag = tag_text_holder.findNext(True, text=re.compile("Episode:"))
+        if ep_number_tag:
+            ep_number_tag = ep_number_tag.replace('Episode:', '').strip()
+            listing['season'] = int(ep_number_tag[:-3])
+            listing['episode'] = int(ep_number_tag[-3:])
+        description_tag = tag_text_holder.findNext('div', {'class': re.compile('description')})
+        if description_tag:
+            listing['description'] = description_tag.text            
+    return listing    
     
 
 def FULLEPISODES():
     xbmcplugin.setContent(pluginhandle, 'episodes')
     xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_NONE)
-    full = 'http://www.thedailyshow.com/full-episodes/'
+    full = 'http://www.colbertnation.com/full-episodes/'
     data = getURL(full)
     weeks = re.compile('<a id="(.+?)" class="seaso.+?" href="#">(.+?)</a>').findall(data)
     for url, week in weeks:
-        data = getURL(url)
-        episodes = BeautifulSoup(data).findAll('div', {'class': re.compile('moreEpisodesContainer')})
+        data = getURL('http://www.colbertnation.com/' + url)
+        episodes = BeautifulSoup(data).findAll('div', {'class': re.compile('showcase_item')})
         listings = map(extract_data_from_episode, episodes)
         print listings
         for listing in listings:
@@ -305,7 +307,7 @@ def PLAYVIDEO(name,url):
 
 def PLAYFULLEPISODE(name,url):
     data = getURL(url)
-    uri = re.compile('http://media.mtvnservices.com/(mgid:cms:episode:thedailyshow.com:\d{6})').findall(data)[0]
+    uri = re.compile('mgid:cms:item:colbertnation.com:\d{6}').findall(data)[0]
     #url = 'http://media.mtvnservices.com/player/config.jhtml?uri='+uri+'&group=entertainment&type=network&site=thedailyshow.com'
     url = 'http://shadow.comedycentral.com/feeds/video_player/mrss/?uri='+uri
     data = getURL(url)
