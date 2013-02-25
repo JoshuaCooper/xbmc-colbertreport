@@ -80,10 +80,10 @@ def pageFragments(url):
 ################################ Root listing
 def ROOT():
     addDir('Full Episodes','full',5)
-    addDir('Browse by Date','date',1)
-    addDir('News Team','newsteam',2)
-    addDir('Segments','segments',4)
-    addDir('Guests','guests',3)
+    #addDir('Browse by Date','date',1)
+    #addDir('News Team','newsteam',2)
+    #addDir('Segments','segments',4)
+    #addDir('Guests','guests',3)
     xbmcplugin.endOfDirectory(pluginhandle)
 
 def extract_data_from_episode(episode):
