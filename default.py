@@ -307,7 +307,7 @@ def PLAYVIDEO(name,url):
 
 def PLAYFULLEPISODE(name,url):
     data = getURL(url)
-    uri = re.compile('mgid:cms:item:colbertnation.com:\d{6}').findall(data)[0]
+    uri = re.compile('mgid:cms:episode:colbertnation.com:\d{6}').findall(data)[0]
     #url = 'http://media.mtvnservices.com/player/config.jhtml?uri='+uri+'&group=entertainment&type=network&site=thedailyshow.com'
     url = 'http://shadow.comedycentral.com/feeds/video_player/mrss/?uri='+uri
     data = getURL(url)
