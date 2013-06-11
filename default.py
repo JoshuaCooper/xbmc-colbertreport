@@ -1,15 +1,14 @@
 import urllib,urllib2,re,xbmcplugin,xbmcgui
 import os,sys,datetime
-from BeautifulSoup import BeautifulSoup
+import BeautifulSoup
 import demjson
 
-DATELOOKUP = "http://www.thedailyshow.com/feeds/timeline/coordinates/"
 
 pluginhandle = int(sys.argv[1])
 shownail = xbmc.translatePath(os.path.join(os.getcwd().replace(';', ''),"icon.png"))
 fanart = xbmc.translatePath(os.path.join(os.getcwd().replace(';', ''),'fanart.jpg'))
 xbmcplugin.setPluginFanart(pluginhandle, fanart, color2='0xFFFF3300')
-TVShowTitle = 'The Daily Show'
+TVShowTitle = 'The Colbert Report'
 
 if xbmcplugin.getSetting(pluginhandle,"sort") == '0':
     SORTORDER = 'date'
@@ -21,7 +20,7 @@ elif xbmcplugin.getSetting(pluginhandle,"sort") == '2':
 ################################ Common
 def getURL( url ):
     try:
-        print 'The Daily Show --> getURL :: url = '+url
+        print 'The Colbert Report --> getURL :: url = '+url
         txdata = None
         txheaders = {
             'Referer': 'http://www.colbertnation.com/video/',
@@ -105,8 +104,8 @@ def FULLEPISODES():
         u += "&plot="+urllib.quote_plus(plot)
         u += "&thumbnail="+urllib.quote_plus(thumbnail)
         liz=xbmcgui.ListItem(name, iconImage="DefaultFolder.png", thumbnailImage=thumbnail)
-        liz.setInfo( type="Video", infoLabels={ "Title": name,
-                                                "Plot":plot,
+        liz.setInfo( type="Video", infoLabels={ "Title": BeautifulSoup.BeautifulSoup(name, convertEntities=BeautifulSoup.BeautifulSoup.HTML_ENTITIES),
+                                                "Plot": BeautifulSoup.BeautifulSoup(plot, convertEntities=BeautifulSoup.BeautifulSoup.HTML_ENTITIES),
                                                 "Season":season,
                                                 "Episode": episode,
                                                 "premiered":date,
